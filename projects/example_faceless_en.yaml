@@ -6,7 +6,7 @@ name: example_faceless_en
 template: faceless
 language: en
 voice: en-US-AndrewMultilingualNeural
-rate: 1.0
+rate: 1.15   # brisk pace for Instagram — drop toward 1.0 for calmer, longer-form content
 
 platforms: [instagram]
 primary_platform: instagram

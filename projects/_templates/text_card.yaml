@@ -7,7 +7,9 @@ language: REPLACE_ME_LANGUAGE   # en | fa
 
 # Pick a voice with `videogen voices --language REPLACE_ME_LANGUAGE`.
 voice: en-US-AndrewMultilingualNeural
-rate: 1.0
+# 1.15 reads as brisk/energetic — good for short-form (Reels/Shorts). Drop toward 1.0 for a
+# calmer pace (e.g. a longer-form YouTube video). Azure only — ignored on --provider gemini.
+rate: 1.15
 
 platforms: [instagram, linkedin]
 primary_platform: instagram

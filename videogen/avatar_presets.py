@@ -10,6 +10,9 @@ asset set later (see assets/avatar/README.md) if true mouth animation is ever wa
 AVATAR_PRESETS: dict[str, str] = {
     "male": "assets/avatar/male.png",
     "female": "assets/avatar/female.png",
+    "male_casual": "assets/avatar/male_casual.png",
+    "female_formal": "assets/avatar/female_formal.png",
+    "couple": "assets/avatar/couple.png",
 }
 
 

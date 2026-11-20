@@ -7,9 +7,12 @@ language: REPLACE_ME_LANGUAGE   # en | fa
 
 # Pick a voice with `videogen voices --language REPLACE_ME_LANGUAGE`.
 voice: en-US-AndrewMultilingualNeural
-rate: 1.0
+# 1.15 reads as brisk/energetic — good for short-form (Reels/Shorts). Drop toward 1.0 for a
+# calmer pace (e.g. a longer-form YouTube video). Azure only — ignored on --provider gemini.
+rate: 1.15
 
-avatar: male   # male | female (see assets/avatar/) — or a direct path to your own portrait
+avatar: male   # male | female | male_casual | female_formal | couple (see assets/avatar/)
+               # — or a direct path to your own portrait
 
 platforms: [instagram, linkedin, youtube_shorts]
 primary_platform: instagram

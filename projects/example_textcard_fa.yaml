@@ -6,7 +6,7 @@ name: example_textcard_fa
 template: text_card
 language: fa
 voice: fa-IR-DilaraNeural
-rate: 1.0
+rate: 1.15   # brisk pace for Instagram — drop toward 1.0 for calmer, longer-form content
 
 platforms: [instagram]
 primary_platform: instagram

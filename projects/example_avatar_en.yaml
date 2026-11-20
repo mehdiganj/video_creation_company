@@ -5,7 +5,7 @@ name: example_avatar_en
 template: avatar
 language: en
 voice: en-US-AndrewMultilingualNeural
-rate: 1.0
+rate: 1.15   # brisk pace for Instagram — drop toward 1.0 for calmer, longer-form content
 
 avatar: male
 
