@@ -1,0 +1,29 @@
+# Translated + dubbed from a downloaded English reel (Downloads/snapgram.io_vt360ef7nrgd.mp4)
+# via Azure Speech-to-Text transcription + manual translation. Not Mehdi's own script.
+
+name: anthropic_fellows_fa
+template: avatar
+language: fa
+voice: fa-IR-FaridNeural
+rate: 1.15
+
+avatar: male
+
+platforms: [instagram]
+primary_platform: instagram
+
+captions:
+  style: karaoke
+  max_words_per_cue: 4
+  position: 0.82
+
+scenes:
+  - text: "آنتروپیک به شما ۶۰ هزار دلار پرداخت می‌کند تا از پژوهشگران خودش یاد بگیرید."
+  - text: "این برنامه‌ی Anthropic Fellows است، به مدت چهار ماه."
+  - text: "پژوهشگران خود آنتروپیک شما را آموزش می‌دهند."
+  - text: "نیازی به تجربه‌ی هوش مصنوعی یا مدرک خاصی نیست."
+  - text: "از ژانویه‌ی ۲۰۲۷ کنار افرادی شروع می‌کنید که Claude را ساخته‌اند، و این می‌تواند به یک شغل تبدیل شود."
+  - text: "نزدیک به نیمی از فلوهای قبلی پیشنهاد شغل تمام‌وقت از آنتروپیک گرفته‌اند."
+  - text: "و آنتروپیک قرار است سهامش عمومی عرضه شود، پس ۶۰ هزار دلار را فراموش کنید."
+  - text: "چهار ماه کنار داغ‌ترین شرکت دنیای هوش مصنوعی."
+  - text: "در کامنت‌ها بنویسید fellow تا لینک رو براتون بفرستم."

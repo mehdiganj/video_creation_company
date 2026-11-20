@@ -146,6 +146,9 @@ def render(
 
     on_progress("mixing master audio...")
     master_audio_path = audio.build_master_audio(project, voice_path, voice_duration_s, work_dir, brand)
+    # Re-probe rather than reuse voice_duration_s: loudnorm/mixing can shift duration by a
+    # hair, and this value is the ground truth the video gets hard-trimmed to (compose.py).
+    master_duration_s = float(ffmpeg.probe(master_audio_path)["format"]["duration"])
 
     target_platforms = platforms or project.platforms
     reports: dict[str, ExportReport] = {}
@@ -180,6 +183,7 @@ def render(
             master_audio_path=master_audio_path,
             out_video_path=out_video_path,
             work_dir=platform_work_dir,
+            target_duration_s=master_duration_s,
             preset=preset,
             crf=crf,
         )

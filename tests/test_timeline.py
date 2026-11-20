@@ -18,7 +18,7 @@ def _synth_all(project, tmp_path):
     return results
 
 
-def test_scene_offsets_include_pause(tmp_path):
+def test_scene_spans_are_contiguous_through_the_pause(tmp_path):
     project = VideoProject.load(FIXTURES_DIR / "project_min_en.yaml")
     synth_results = _synth_all(project, tmp_path)
 
@@ -27,8 +27,12 @@ def test_scene_offsets_include_pause(tmp_path):
     assert len(timeline.scene_spans) == 2
     first, second = timeline.scene_spans
     assert first.start_s == 0.0
-    # second scene must start after the first scene's audio PLUS its pause_after_s
-    assert second.start_s == pytest.approx(first.end_s + project.scenes[0].pause_after_s)
+    # A scene's visual span extends through its trailing pause, right up to the next scene's
+    # start — no gap in background coverage between scenes (see timeline.py's docstring on why).
+    assert first.end_s == second.start_s
+
+    first_speech_end_s = first.start_s + synth_results[0].duration_s
+    assert second.start_s == pytest.approx(first_speech_end_s + project.scenes[0].pause_after_s)
     assert timeline.total_duration_s == second.end_s
 
 

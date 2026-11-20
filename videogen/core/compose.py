@@ -24,6 +24,7 @@ def render_platform_video(
     master_audio_path: Path,
     out_video_path: Path,
     work_dir: Path,
+    target_duration_s: float,
     preset: str = "medium",
     crf: int = 20,
 ) -> None:
@@ -79,7 +80,14 @@ def render_platform_video(
             raise ValueError(f"unknown background kind: {bg.kind!r}")
         bg_labels.append(f"[{label}]")
 
-    filter_parts.append(f"{''.join(bg_labels)}concat=n={len(bg_labels)}:v=1:a=0[base]")
+    filter_parts.append(f"{''.join(bg_labels)}concat=n={len(bg_labels)}:v=1:a=0[concat]")
+    # Hard-pin the concatenated background to the real audio's duration. Individual background
+    # segments (solid/image/video, with or without Ken Burns) are each built to their own exact
+    # target length, but concatenating several ffmpeg-filter-generated segments has been observed
+    # to drift by up to a couple seconds in one direction or the other depending on background
+    # kind (caught via a real multi-scene render) — trimming here is a correctness guarantee
+    # that doesn't depend on tracking down every filter's exact frame-accounting behavior.
+    filter_parts.append(f"[concat]trim=duration={target_duration_s:.3f},setpts=PTS-STARTPTS[base]")
 
     current = "[base]"
     for k, ov in enumerate(sorted(overlays, key=lambda o: o.z)):

@@ -86,7 +86,14 @@ class AzureSpeechTTS(TTSProvider):
                 f"Azure TTS synthesis failed for voice={voice!r}: {reason} {error_detail}"
             )
 
-        duration_s = words[-1].end_s if words else _probe_wav_duration(out_path)
+        # Always probe the actual rendered WAV rather than trusting the last word-boundary
+        # event's end time: Azure's audio routinely has trailing silence/padding after the
+        # last spoken word, so word-derived "duration" under-counts real audio length — which
+        # silently shrank every scene's on-screen time relative to its real narration (caught
+        # via a real multi-scene Azure render: timeline math said 37.2s, the actual
+        # synthesized audio was 44.3s). Word timings themselves are still exact and still drive
+        # caption sync; only the scene-level duration summary changes here.
+        duration_s = _probe_wav_duration(out_path)
         return SynthesisResult(wav_path=out_path, duration_s=duration_s, words=words)
 
     def list_voices(self, language: str | None = None) -> list[VoiceInfo]:

@@ -58,7 +58,7 @@ def build_timeline(
     if len(synth_results) != len(project.scenes):
         raise ValueError("one SynthesisResult is required per scene")
 
-    scene_spans: list[SceneSpan] = []
+    speech_end_s: list[float] = []  # end of this scene's actual narration (excludes trailing pause)
     all_words: list[WordTiming] = []
     offsets: list[float] = []
     cursor = 0.0
@@ -67,14 +67,27 @@ def build_timeline(
         offsets.append(cursor)
         start_s = cursor
         end_s = cursor + synth.duration_s
-        scene_spans.append(SceneSpan(scene_index=i, scene=scene, start_s=start_s, end_s=end_s))
+        speech_end_s.append(end_s)
         for w in synth.words:
             all_words.append(
                 WordTiming(text=w.text, start_s=start_s + w.start_s, duration_s=w.duration_s)
             )
         cursor = end_s + max(scene.pause_after_s, gap_s if i < len(project.scenes) - 1 else 0.0)
 
-    total_duration_s = scene_spans[-1].end_s if scene_spans else 0.0
+    # A scene's *visual* span extends through the pause that follows it, up to the next
+    # scene's start (the last scene has no trailing pause — see audio.py/pipeline.py, neither
+    # inserts one after the final scene either). Using the bare speech-end here would leave a
+    # silent gap with no background for every inter-scene pause: concatenated backgrounds would
+    # then fall short of the real audio by the sum of every pause_after_s, which `-shortest` on
+    # the final ffmpeg encode would then silently truncate the END of the narration to match —
+    # caught via a real multi-scene render whose last ~3s of audio were getting cut.
+    scene_spans: list[SceneSpan] = []
+    for i, scene in enumerate(project.scenes):
+        start_s = offsets[i]
+        visual_end_s = offsets[i + 1] if i + 1 < len(offsets) else speech_end_s[i]
+        scene_spans.append(SceneSpan(scene_index=i, scene=scene, start_s=start_s, end_s=visual_end_s))
+
+    total_duration_s = speech_end_s[-1] if speech_end_s else 0.0
 
     cues = _group_into_cues(
         scene_spans=scene_spans,
