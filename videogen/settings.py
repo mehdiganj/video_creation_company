@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     azure_speech_key: str | None = Field(default=None, alias="AZURE_SPEECH_KEY")
     azure_speech_region: str | None = Field(default=None, alias="AZURE_SPEECH_REGION")
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
 
     videogen_tts_provider: str = Field(default="azure", alias="VIDEOGEN_TTS_PROVIDER")
     videogen_out_dir: str = Field(default="out", alias="VIDEOGEN_OUT_DIR")
@@ -30,6 +31,9 @@ class Settings(BaseSettings):
 
     def has_azure_credentials(self) -> bool:
         return bool(self.azure_speech_key and self.azure_speech_region)
+
+    def has_gemini_credentials(self) -> bool:
+        return bool(self.gemini_api_key)
 
 
 def get_settings() -> Settings:

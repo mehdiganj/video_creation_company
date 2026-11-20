@@ -43,20 +43,50 @@ bidi reordering (`python-bidi`) per rendered line instead. If something looks wr
 - A render that used to work now fails after weeks of not running it — Azure can deprovision
   an idle free-tier (F0) Speech resource; check the portal.
 
+## Gemini errors
+
+- `GEMINI_API_KEY is not set` — copy `.env.example` to `.env` and fill it in, or pass
+  `--provider mock` to render/preview without real TTS.
+- `Gemini voice replication failed (HTTP ...)` from `videogen clone-voice` — this endpoint is
+  new (~Sep 2026) and has reported instability (REST 500s) on Google's own developer forum.
+  Try cloning the voice directly in [Google AI Studio](https://aistudio.google.com) instead —
+  Google's own primary documented path — and paste the resulting voice id into a project's
+  `voice:` field; it works exactly the same way either way.
+- Captions drift noticeably more on Gemini-voiced renders than Azure-voiced ones — expected,
+  not a bug. Gemini's TTS response carries no word-level timing (a confirmed, open limitation,
+  not a gap in this integration), so word timings are estimated from character count — see
+  `providers/gemini.py`'s module docstring. Switch to `--provider azure` if exact caption sync
+  matters more than voice cloning for a given video.
+- `rate:` in a project YAML has no effect when rendering with `--provider gemini` — no
+  documented numeric speaking-rate parameter was found for this API; it's silently ignored
+  there (still applied on Azure).
+
 ## Costs & limits
 
-Azure's free tier (F0) is roughly 0.5M characters/month of neural TTS (~180 minutes). Every
-synthesis is cached on `(text, voice, language, rate)` in `.cache/tts/` — re-rendering after
-only changing captions, music, or a background never re-bills unchanged narration. Use
-`--no-cache` on `videogen render` only when you deliberately want to force re-synthesis (e.g.
-after editing a scene's text but keeping the same cache key would be wrong — in practice this
-shouldn't happen, since the text itself is part of the cache key).
+Azure's free tier (F0) is roughly 0.5M characters/month of neural TTS (~180 minutes), billed
+per character past that. Gemini bills per-token (input text + output audio tokens) and has no
+free tier here — it's the pricier option; its main value is self-serve voice cloning, not cost.
+
+Run `videogen estimate <project>.yaml --provider azure|gemini` before a real render to see
+projected new characters, duration, and cost. Every synthesis is cached on
+`(text, voice, language, rate, provider)` in `.cache/tts/` — re-rendering after only changing
+captions, music, or a background never re-bills unchanged narration, and `estimate` reflects
+that (already-cached scenes show as free). Use `--no-cache` on `videogen render` only when you
+deliberately want to force re-synthesis — in practice this shouldn't be necessary, since the
+scene's own text is already part of the cache key.
 
 ## Renders are slow
 
-`videogen preview` renders at ~45% resolution with the `mock` TTS provider and ffmpeg's
-`ultrafast` preset by default — use it while iterating on a script/layout, and `render` only
-for the final pass. This project deliberately doesn't use moviepy/per-frame Python compositing
-(see the architecture note at the top of `core/compose.py`); if a real render is still slow,
-check `out/<name>/_work/<platform>/<platform>.cmd.txt` for the exact ffmpeg command and profile
-it directly (e.g. try `-preset faster` or drop `-crf` a few points).
+Two different things can be slow — treat them separately:
+
+- **TTS synthesis** (network calls to Azure/Gemini): uncached scenes synthesize concurrently
+  (`--concurrency`, default 4, on `videogen render`) since each call is dominated by network
+  round-trip latency, not local compute — this is the main lever for multi-scene projects. A
+  lower `--concurrency` trades speed for staying further under a provider's rate limits.
+- **Compositing/encoding** (ffmpeg): `videogen preview` renders at ~45% resolution with the
+  `mock` TTS provider and ffmpeg's `ultrafast` preset by default — use it while iterating on a
+  script/layout, and `render` only for the final pass. This project deliberately doesn't use
+  moviepy/per-frame Python compositing (see the architecture note at the top of
+  `core/compose.py`); if a real render is still slow, check
+  `out/<name>/_work/<platform>/<platform>.cmd.txt` for the exact ffmpeg command and profile it
+  directly (e.g. try `-preset faster` or drop `-crf` a few points).

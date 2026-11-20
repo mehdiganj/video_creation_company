@@ -13,10 +13,15 @@ import struct
 import wave
 from pathlib import Path
 
-from videogen.providers.base import SynthesisResult, TTSProvider, VoiceInfo, WordTiming
+from videogen.providers.base import (
+    SynthesisResult,
+    TTSProvider,
+    VoiceInfo,
+    estimate_duration_s,
+    estimate_word_timings,
+)
 
 SAMPLE_RATE = 48_000
-CHARS_PER_SECOND = 15.0   # rough average speaking rate at rate=1.0
 TONE_HZ = 220.0           # audible-but-unobtrusive tone so a mock render isn't silent
 
 
@@ -29,20 +34,8 @@ class MockTTS(TTSProvider):
         out_path: Path,
         rate: float = 1.0,
     ) -> SynthesisResult:
-        words = text.split()
-        if not words:
-            words = [""]
-
-        total_chars = sum(len(w) for w in words) or 1
-        total_duration_s = max(0.3, total_chars / (CHARS_PER_SECOND * rate))
-
-        timings: list[WordTiming] = []
-        t = 0.0
-        for w in words:
-            share = len(w) / total_chars if total_chars else 1.0 / len(words)
-            dur = total_duration_s * share
-            timings.append(WordTiming(text=w, start_s=t, duration_s=dur))
-            t += dur
+        total_duration_s = estimate_duration_s(text, rate)
+        timings = estimate_word_timings(text, total_duration_s)
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
         _write_tone_wav(out_path, total_duration_s)

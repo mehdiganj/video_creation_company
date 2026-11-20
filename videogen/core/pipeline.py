@@ -6,6 +6,7 @@ overlays -> ffmpeg compose -> export self-check.
 from __future__ import annotations
 
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from videogen.brand import load_brand
 from videogen.core import audio, cache, captions, compose, ffmpeg
@@ -16,11 +17,13 @@ from videogen.models import VideoProject
 from videogen.platforms import get_platform
 from videogen.providers.azure import AzureSpeechTTS
 from videogen.providers.base import SynthesisResult, TTSProvider
+from videogen.providers.gemini import GeminiTTS
 from videogen.providers.mock import MockTTS
 from videogen.settings import REPO_ROOT, Settings
 from videogen.templates import get_template
 
 ProgressFn = Callable[[str], None]
+DEFAULT_MAX_CONCURRENCY = 4
 
 
 def make_provider(provider_name: str, settings: Settings) -> TTSProvider:
@@ -33,7 +36,14 @@ def make_provider(provider_name: str, settings: Settings) -> TTSProvider:
                 "and fill them in, or pass --provider mock to render without real TTS."
             )
         return AzureSpeechTTS(settings.azure_speech_key, settings.azure_speech_region)
-    raise ConfigError(f"Unknown TTS provider: {provider_name!r} (expected 'azure' or 'mock')")
+    if provider_name == "gemini":
+        if not settings.has_gemini_credentials():
+            raise MissingDependencyError(
+                "GEMINI_API_KEY is not set. Copy .env.example to .env and fill it in, or pass "
+                "--provider mock to render without real TTS."
+            )
+        return GeminiTTS(settings.gemini_api_key)
+    raise ConfigError(f"Unknown TTS provider: {provider_name!r} (expected 'azure', 'gemini', or 'mock')")
 
 
 def synthesize_scenes(
@@ -42,17 +52,32 @@ def synthesize_scenes(
     provider_name: str,
     settings: Settings,
     use_cache: bool = True,
+    max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
 ) -> list[SynthesisResult]:
-    results: list[SynthesisResult] = []
+    """Synthesizes every scene's narration, reusing the TTS cache where possible. Cache misses
+    are synthesized concurrently (each is an independent, blocking network call to the TTS
+    provider) — the biggest lever on wall-clock render time for multi-scene projects, since
+    Azure/Gemini calls are dominated by network round-trip latency, not local compute.
+    `max_concurrency` caps how many requests are in flight at once, to stay well under a
+    provider's rate limits."""
     tts_cache_dir = settings.cache_dir
-    for i, scene in enumerate(project.scenes):
-        key = cache.tts_cache_key(scene.text, project.voice, project.language, project.rate, provider_name)
+    keys = [
+        cache.tts_cache_key(scene.text, project.voice, project.language, project.rate, provider_name)
+        for scene in project.scenes
+    ]
+    results: list[SynthesisResult | None] = [None] * len(project.scenes)
+    to_synthesize: list[int] = []
+
+    for i, key in enumerate(keys):
         cached = cache.get_cached_tts(tts_cache_dir, key) if use_cache else None
         if cached is not None:
-            results.append(cached)
-            continue
+            results[i] = cached
+        else:
+            to_synthesize.append(i)
 
-        wav_path, _ = cache.cache_paths(tts_cache_dir, key)
+    def _synth_one(i: int) -> SynthesisResult:
+        scene = project.scenes[i]
+        wav_path, _ = cache.cache_paths(tts_cache_dir, keys[i])
         wav_path.parent.mkdir(parents=True, exist_ok=True)
         result = provider.synthesize(
             text=scene.text,
@@ -61,8 +86,17 @@ def synthesize_scenes(
             out_path=wav_path,
             rate=project.rate,
         )
-        results.append(cache.put_cached_tts(tts_cache_dir, key, result))
-    return results
+        return cache.put_cached_tts(tts_cache_dir, keys[i], result)
+
+    if to_synthesize:
+        workers = max(1, min(max_concurrency, len(to_synthesize)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            future_to_index = {pool.submit(_synth_one, i): i for i in to_synthesize}
+            for future in as_completed(future_to_index):
+                i = future_to_index[future]
+                results[i] = future.result()  # re-raises here if _synth_one failed
+
+    return results  # type: ignore[return-value]  # every slot was filled above
 
 
 def render(
@@ -71,6 +105,7 @@ def render(
     platforms: list[str] | None = None,
     provider_name: str | None = None,
     use_cache: bool = True,
+    max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
     canvas_scale: float = 1.0,
     preset: str = "medium",
     crf: int = 20,
@@ -99,7 +134,9 @@ def render(
     work_dir.mkdir(parents=True, exist_ok=True)
 
     on_progress(f"synthesizing {len(project.scenes)} scene(s) via {provider_name}...")
-    synth_results = synthesize_scenes(project, provider, provider_name, settings, use_cache)
+    synth_results = synthesize_scenes(
+        project, provider, provider_name, settings, use_cache, max_concurrency
+    )
 
     timeline = build_timeline(project, synth_results)
     on_progress(f"timeline built: {timeline.total_duration_s:.1f}s, {len(timeline.cues)} caption cue(s)")

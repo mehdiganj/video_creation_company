@@ -52,12 +52,46 @@ videogen render projects/my-reel.yaml       # full render, every platform in the
 
 See [docs/project-schema.md](docs/project-schema.md) for every field a project YAML accepts.
 
+## TTS providers, cost, and voice cloning
+
+Two providers, picked with `--provider` (or `VIDEOGEN_TTS_PROVIDER` in `.env`):
+
+- **`azure`** (default) — cheap (free tier covers ~180 min/month, then $15/1M characters),
+  real word-boundary timing for accurate captions. Stock voices only.
+- **`gemini`** — pricier (per-token, not per-character), and its TTS response carries no word
+  timing at all (captions fall back to the same character-count estimate `--provider mock`
+  uses — see `providers/gemini.py`'s docstring). The reason to use it: **self-serve voice
+  cloning**. Azure's equivalent (Personal Voice) needs Microsoft's gated approval; Gemini's
+  voice replication is just an API call (or the AI Studio UI) away — two short recordings and
+  you have a voice id to use as `voice:` in a project.
+
+Clone your voice (beta — see caveats in `providers/gemini.py` if it errors):
+
+```bash
+videogen clone-voice --source my_voice.wav --consent my_consent.wav --name "mehdi"
+# -> prints a voice id; set that as `voice:` in a project with --provider gemini
+```
+
+`--consent` must be you reading the *exact* consent statement Google's AI Studio voice-
+replication flow shows you — this tool doesn't supply that wording.
+
+Before rendering for real, check the cost:
+
+```bash
+videogen estimate projects/my-reel.yaml --provider azure
+```
+
+Scenes already in the TTS cache cost nothing on a re-render — only new/changed narration is
+counted. TTS calls for *uncached* scenes run concurrently (`--concurrency`, default 4) since
+each is dominated by network latency, not local compute — the main lever on render speed for
+multi-scene projects.
+
 ## How it works
 
 One project config renders to several platforms without re-running TTS for each:
 
 ```
-load + validate  ->  per-scene Azure TTS (cached)  ->  timeline (word timings, caption cues)
+load + validate  ->  per-scene TTS, cached + concurrent  ->  timeline (word timings, cues)
                   ->  master audio (voice + music, ducked, loudness-normalized)
                   ->  [per platform] backgrounds + captions + template overlays
                   ->  ffmpeg compose  ->  encode  ->  ffprobe self-check
@@ -100,7 +134,10 @@ You never touch TTS, timeline, captions, audio, or export code to add a template
 ## Adding a new TTS provider
 
 Implement `TTSProvider` in `videogen/providers/base.py` (see `providers/mock.py` for the
-simplest possible example). Wire it into `core/pipeline.py:make_provider`.
+simplest possible example, `providers/gemini.py` for a real one). Wire it into
+`core/pipeline.py:make_provider`. If the provider doesn't return real word-boundary timing,
+use `providers.base.estimate_word_timings`/`estimate_duration_s` rather than inventing another
+estimation scheme — and say so in a docstring, the way `gemini.py` does.
 
 ## Troubleshooting
 
@@ -109,8 +146,9 @@ disconnected letters, Azure quota/auth errors, slow renders.
 
 ## Costs, caching, licensing
 
-- Azure TTS is metered; every synthesis is cached on a hash of `(text, voice, language, rate)`
-  in `.cache/tts/` — editing captions/music/background never re-bills unchanged narration.
+- TTS is metered on both providers; every synthesis is cached on a hash of
+  `(text, voice, language, rate, provider)` in `.cache/tts/` — editing captions/music/background
+  never re-bills unchanged narration. `videogen estimate` projects cost before you render.
 - `assets/music/` and `assets/backgrounds/` are gitignored (bring your own licensed tracks and
   footage); `assets/fonts/` (Inter, Vazirmatn, both OFL) and `assets/avatar/` are committed.
 - Code is MIT-licensed (see `LICENSE`).

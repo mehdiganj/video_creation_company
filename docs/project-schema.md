@@ -7,8 +7,11 @@ not a copy of the code. Run `videogen validate <file>.yaml` to check a project a
 name: my-reel                 # required — also the output folder name under out/
 template: avatar               # required — avatar | faceless | text_card
 language: en                   # required — en | fa
-voice: en-US-AndrewMultilingualNeural   # required — `videogen voices --language en`
-rate: 1.0                      # optional, 0.3-2.5 — Azure SSML prosody rate multiplier
+voice: en-US-AndrewMultilingualNeural   # required — `videogen voices --provider azure --language en`
+                                #   (for Gemini: a stock name like "Kore", or a cloned voice id
+                                #   from `videogen clone-voice` / AI Studio)
+rate: 1.0                      # optional, 0.3-2.5 — Azure SSML prosody rate multiplier.
+                                #   Not applied on Gemini (no documented rate parameter there).
 
 avatar: male                   # only used by template: avatar — male | female | a custom path
 
@@ -50,3 +53,6 @@ scenes:                        # required, at least one
 - `voice`/`language` mismatches are a warning, not an error (`videogen validate` and
   `render` both print it) — Azure's multilingual voices can legitimately speak a language other
   than their name implies.
+- The TTS provider itself (`azure` / `gemini` / `mock`) isn't a project YAML field — it's
+  chosen at render time with `--provider`, or `VIDEOGEN_TTS_PROVIDER` in `.env`. A project's
+  `voice:` only makes sense for whichever provider you render it with.
