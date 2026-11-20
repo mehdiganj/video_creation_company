@@ -39,6 +39,32 @@ from videogen.platforms import Platform
 
 _LINE_SPACING = 1.3
 _VERTICAL_PADDING_RATIO = 0.35  # extra band height above/below the text, as a ratio of font size
+_PILL_PAD_X_RATIO = 0.4   # backdrop "pill" horizontal padding, as a ratio of font size
+_PILL_PAD_Y_RATIO = 0.22  # backdrop "pill" vertical padding, as a ratio of font size
+
+
+def _hex_to_rgba(hex_color: str) -> tuple[int, int, int, int]:
+    """Accepts '#RRGGBB' (opaque) or '#RRGGBBAA'."""
+    h = hex_color.lstrip("#")
+    if len(h) == 6:
+        h += "ff"
+    r, g, b, a = (int(h[i : i + 2], 16) for i in (0, 2, 4, 6))
+    return r, g, b, a
+
+
+def _draw_pill(draw: ImageDraw.ImageDraw, center_x: float, center_y: float, text_w: float, font_size: int, color: tuple[int, int, int, int]) -> None:
+    """A rounded-rectangle backdrop behind one line of caption text, sized to that line's own
+    width — not a full-width bar — so readability holds over any background without drawing a
+    stripe across the whole frame."""
+    pad_x = font_size * _PILL_PAD_X_RATIO
+    pad_y = font_size * _PILL_PAD_Y_RATIO
+    half_w = text_w / 2 + pad_x
+    half_h = font_size / 2 + pad_y
+    draw.rounded_rectangle(
+        [center_x - half_w, center_y - half_h, center_x + half_w, center_y + half_h],
+        radius=half_h * 0.6,
+        fill=color,
+    )
 
 
 def render_caption_overlays(
@@ -59,6 +85,8 @@ def render_caption_overlays(
     max_text_w = canvas.width - 2 * margin
     text_color = brand["colors"]["text"]
     highlight_color = style.highlight_color or brand["colors"]["accent"]
+    caption_bg = brand["colors"].get("caption_bg")
+    pill_color = _hex_to_rgba(caption_bg) if caption_bg else None
 
     overlays: list[OverlayLayer] = []
     for cue_idx, cue in enumerate(cues):
@@ -72,14 +100,14 @@ def render_caption_overlays(
             overlays.extend(
                 _render_karaoke_states(
                     cue, cue_idx, language, font, font_size, canvas,
-                    text_color, highlight_color, out_dir, style.position,
+                    text_color, highlight_color, out_dir, style.position, pill_color,
                 )
             )
         else:
             overlays.append(
                 _render_block_cue(
                     cue, cue_idx, words, language, font, font_size, canvas, max_text_w,
-                    text_color, out_dir, style.position,
+                    text_color, out_dir, style.position, pill_color,
                 )
             )
     return overlays
@@ -88,6 +116,7 @@ def render_caption_overlays(
 def _render_karaoke_states(
     cue: Cue, cue_idx: int, language: str, font, font_size: int, canvas: Platform,
     text_color: str, highlight_color: str, out_dir: Path, position: float,
+    pill_color: tuple[int, int, int, int] | None,
 ) -> list[OverlayLayer]:
     full_text = " ".join(w.text for w in cue.words if w.text)
     full_display = text_shaping.shape_for_display(full_text, language)
@@ -107,6 +136,8 @@ def _render_karaoke_states(
 
         band = Image.new("RGBA", (band_w, band_h), (0, 0, 0, 0))
         draw = ImageDraw.Draw(band)
+        if pill_color:
+            _draw_pill(draw, band_w / 2, mid_y, full_w, font_size, pill_color)
         draw.text((band_w / 2, mid_y), full_display, font=font, fill=text_color, anchor="mm")
 
         prefix_text = " ".join(w.text for w in cue.words[:highlighted_count] if w.text)
@@ -132,6 +163,7 @@ def _render_karaoke_states(
 def _render_block_cue(
     cue: Cue, cue_idx: int, words: list[str], language: str, font, font_size: int,
     canvas: Platform, max_text_w: int, text_color: str, out_dir: Path, position: float,
+    pill_color: tuple[int, int, int, int] | None,
 ) -> OverlayLayer:
     lines = text_shaping.wrap_words(words, font, max_text_w)
     display_lines = [text_shaping.shape_for_display(line, language) for line in lines]
@@ -143,6 +175,10 @@ def _render_block_cue(
     band = Image.new("RGBA", (band_w, band_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(band)
     top = (band_h - len(display_lines) * line_h) / 2 + line_h / 2
+    if pill_color:
+        for i, line in enumerate(display_lines):
+            y = top + i * line_h
+            _draw_pill(draw, band_w / 2, y, font.getlength(line), font_size, pill_color)
     for i, line in enumerate(display_lines):
         y = top + i * line_h
         draw.text((band_w / 2, y), line, font=font, fill=text_color, anchor="mm")
