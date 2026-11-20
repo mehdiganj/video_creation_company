@@ -1,0 +1,22 @@
+# Uses the committed avatar photo (assets/avatar/male.png) — runs with zero extra assets:
+# videogen render projects/example_avatar_en.yaml --provider mock
+
+name: example_avatar_en
+template: avatar
+language: en
+voice: en-US-AndrewMultilingualNeural
+rate: 1.0
+
+avatar: male
+
+platforms: [instagram]
+primary_platform: instagram
+
+captions:
+  style: karaoke
+  max_words_per_cue: 4
+  position: 0.82
+
+scenes:
+  - text: "I ship one AI project every week. Here's why that works."
+  - text: "Most people learn by watching. I learn by shipping in public."

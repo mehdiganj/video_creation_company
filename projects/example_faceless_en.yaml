@@ -1,0 +1,27 @@
+# A minimal working example — runs with zero external assets (solid backgrounds, no music),
+# so `videogen render projects/example_faceless_en.yaml --provider mock` works out of the box.
+# Swap in your own images/video/music once you've added them under assets/.
+
+name: example_faceless_en
+template: faceless
+language: en
+voice: en-US-AndrewMultilingualNeural
+rate: 1.0
+
+platforms: [instagram]
+primary_platform: instagram
+
+captions:
+  style: karaoke
+  max_words_per_cue: 4
+  position: 0.78
+
+scenes:
+  - text: "I ship one AI project every week. Here's why that works."
+    visual:
+      kind: solid
+      color: "#101418"
+  - text: "Most people learn by watching. I learn by shipping in public."
+    visual:
+      kind: solid
+      color: "#1A2230"

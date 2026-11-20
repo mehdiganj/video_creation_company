@@ -1,0 +1,30 @@
+# Default brand/style values. Any project YAML can override individual fields.
+
+colors:
+  background: "#101418"
+  text: "#F5F5F0"
+  accent: "#E8B339"
+  caption_bg: "#00000099"   # semi-transparent caption backdrop
+
+fonts:
+  latin:
+    path: assets/fonts/Inter-Variable.ttf
+    variation_regular: Regular
+    variation_bold: Bold
+  farsi:
+    regular_path: assets/fonts/Vazirmatn-Regular.ttf
+    bold_path: assets/fonts/Vazirmatn-Bold.ttf
+
+# Caption defaults (style, sizing, position) live on CaptionStyle in videogen/models.py, not
+# here — they're part of the project schema so they can be overridden per-project with clear
+# pydantic validation. Only the highlight color falls back to colors.accent above.
+
+text_card:
+  font_size_ratio: 0.09
+  line_spacing: 1.25
+  reveal: word             # word (progressive reveal, timed to speech) | all (static per scene)
+
+audio:
+  music_gain_db: -22
+  duck_gain_db: -14
+  target_lufs: -14

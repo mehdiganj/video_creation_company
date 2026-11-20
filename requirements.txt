@@ -1,0 +1,9 @@
+azure-cognitiveservices-speech>=1.40.0
+pydantic>=2.7
+pydantic-settings>=2.2
+PyYAML>=6.0
+Pillow>=10.3
+numpy>=1.24
+arabic-reshaper>=3.0
+python-bidi>=0.4.2
+rich>=13.0

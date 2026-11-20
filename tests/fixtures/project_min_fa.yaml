@@ -1,0 +1,10 @@
+name: fixture_min_fa
+template: text_card
+language: fa
+voice: fa-IR-DilaraNeural
+platforms: [instagram]
+captions:
+  style: none
+scenes:
+  - text: "من هر هفته یک پروژه با Claude Code می‌سازم و سال ۲۰۲۶ خیلی شلوغ بوده."
+    visual: {kind: solid, color: "#101418"}

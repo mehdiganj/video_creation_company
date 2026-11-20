@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets
+.env
+
+# Render output and caches — never commit generated media or TTS audio
+out/
+.cache/
+
+# Licensed/third-party media the user supplies locally — never commit these
+assets/music/*
+!assets/music/README.md
+assets/backgrounds/*
+!assets/backgrounds/README.md
+
+# OS
+.DS_Store

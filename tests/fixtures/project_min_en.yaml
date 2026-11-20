@@ -1,0 +1,14 @@
+name: fixture_min_en
+template: faceless
+language: en
+voice: en-US-AndrewMultilingualNeural
+platforms: [instagram]
+captions:
+  style: karaoke
+  max_words_per_cue: 3
+scenes:
+  - text: "This is a tiny test scene for the pipeline."
+    visual: {kind: solid, color: "#101418"}
+  - text: "Here is a second scene right after it."
+    visual: {kind: solid, color: "#1A2230"}
+    pause_after_s: 0.2

@@ -1,0 +1,35 @@
+# Scaffolded by `videogen new REPLACE_ME_NAME --template faceless --language REPLACE_ME_LANGUAGE`.
+# Fill in your script and visuals, then: videogen validate projects/REPLACE_ME_NAME.yaml
+
+name: REPLACE_ME_NAME
+template: faceless
+language: REPLACE_ME_LANGUAGE   # en | fa
+
+# Pick a voice with `videogen voices --language REPLACE_ME_LANGUAGE`.
+# Multilingual voices (e.g. en-US-AndrewMultilingualNeural) can also speak other languages.
+voice: en-US-AndrewMultilingualNeural
+rate: 1.0
+
+platforms: [instagram, linkedin, youtube_shorts]
+primary_platform: instagram
+
+music:
+  track: assets/music/REPLACE_WITH_YOUR_TRACK.mp3   # add your own licensed track here
+  gain_db: -22
+  duck: true
+
+captions:
+  style: karaoke          # karaoke | block | none
+  max_words_per_cue: 4
+  position: 0.78
+
+scenes:
+  - text: "Write the first line of your script here."
+    visual:
+      kind: solid
+      color: "#101418"
+  - text: "Then add more scenes — each can have its own background."
+    visual:
+      kind: image
+      src: assets/backgrounds/REPLACE_WITH_YOUR_IMAGE.jpg
+      motion: ken_burns

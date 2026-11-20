@@ -1,0 +1,25 @@
+# Farsi example, deliberately mixing in an English term and digits — the exact case
+# core/text_shaping.py has to get right (see tests/test_text_shaping.py).
+# Runs with zero external assets: `videogen render projects/example_textcard_fa.yaml --provider mock`
+
+name: example_textcard_fa
+template: text_card
+language: fa
+voice: fa-IR-DilaraNeural
+rate: 1.0
+
+platforms: [instagram]
+primary_platform: instagram
+
+captions:
+  style: none   # text_card already shows the script as big on-screen text
+
+scenes:
+  - text: "من هر هفته یک پروژه هوش مصنوعی با Claude Code می‌سازم."
+    visual:
+      kind: solid
+      color: "#101418"
+  - text: "این پروژه چهارمین کار من در سال ۲۰۲۶ است."
+    visual:
+      kind: solid
+      color: "#1A2230"

@@ -1,0 +1,26 @@
+# Scaffolded by `videogen new REPLACE_ME_NAME --template text_card --language REPLACE_ME_LANGUAGE`.
+# Fill in your script, then: videogen validate projects/REPLACE_ME_NAME.yaml
+
+name: REPLACE_ME_NAME
+template: text_card
+language: REPLACE_ME_LANGUAGE   # en | fa
+
+# Pick a voice with `videogen voices --language REPLACE_ME_LANGUAGE`.
+voice: en-US-AndrewMultilingualNeural
+rate: 1.0
+
+platforms: [instagram, linkedin]
+primary_platform: instagram
+
+captions:
+  style: none   # the scene text is already big on-screen text for this template
+
+scenes:
+  - text: "Your first big on-screen line."
+    visual:
+      kind: solid
+      color: "#101418"
+  - text: "Your second line — each scene gets its own slide."
+    visual:
+      kind: solid
+      color: "#1A2230"
