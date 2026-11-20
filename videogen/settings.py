@@ -30,10 +30,17 @@ class Settings(BaseSettings):
         return p if p.is_absolute() else REPO_ROOT / p
 
     def has_azure_credentials(self) -> bool:
-        return bool(self.azure_speech_key and self.azure_speech_region)
+        return _is_filled_in(self.azure_speech_key) and _is_filled_in(self.azure_speech_region)
 
     def has_gemini_credentials(self) -> bool:
-        return bool(self.gemini_api_key)
+        return _is_filled_in(self.gemini_api_key)
+
+
+def _is_filled_in(value: str | None) -> bool:
+    """True if `value` is non-empty and isn't still the literal placeholder text from
+    .env.example (copying .env.example to .env without editing it is an easy trap — `doctor`
+    should say "not set", not falsely claim credentials are ready)."""
+    return bool(value) and "your_" not in value and "_here" not in value
 
 
 def get_settings() -> Settings:

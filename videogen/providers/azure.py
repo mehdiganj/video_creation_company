@@ -58,7 +58,10 @@ class AzureSpeechTTS(TTSProvider):
 
         def _on_word_boundary(evt) -> None:
             boundary_type = getattr(evt, "boundary_type", None)
-            if boundary_type is not None and str(boundary_type) != "Word":
+            # Compare against the enum member, not its str() — SpeechSynthesisBoundaryType.Word
+            # stringifies as "SpeechSynthesisBoundaryType.Word", not "Word", so a string
+            # comparison here silently filtered out every event (verified against SDK 1.53.1).
+            if boundary_type is not None and boundary_type != speechsdk.SpeechSynthesisBoundaryType.Word:
                 return
             start_s = evt.audio_offset / TICKS_PER_SECOND
             duration = getattr(evt, "duration", None)
